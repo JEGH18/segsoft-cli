@@ -60,8 +60,8 @@ def load_config(path: Path, server_override: Optional[str] = None,
     env = os.environ if env is None else env
     if not path.is_file():
         raise ConfigError(
-            f"No se encontró {path}. Crea un {CONFIG_FILE_NAME} en la raíz del repositorio "
-            f"(por ejemplo con «schemaVersion: 1», «server» y «policySet») o indica otro con --config.")
+            f"No se encontró {path}. Créalo con «pdgseg init» en la raíz del proyecto (genera uno que "
+            f"funciona sin editarlo) o indica otro archivo con --config.")
     try:
         raw = yaml.safe_load(path.read_text(encoding="utf-8"))
     except yaml.YAMLError as e:
@@ -182,13 +182,25 @@ def _type_name(value: Any) -> str:
 
 
 def example_config() -> str:
-    return (
-        "schemaVersion: 1\n"
-        "server: https://segsoft-icesi.westus3.cloudapp.azure.com\n"
-        "policySet: \"Perfil PDG ICESI\"\n"
-        "failOnSeverity: high\n"
-        "exclude: [\"node_modules/\", \"dist/\"]\n"
-    )
+    """What «pdgseg init» writes: valid as is (a framework always exists), with the options commented."""
+    return """\
+# Configuración de pdgseg (https://github.com/JEGH18/segsoft-cli#configuración-pdgsegyml)
+schemaVersion: 1
+server: https://segsoft-icesi.westus3.cloudapp.azure.com
+
+# Qué políticas aplicar: deja exactamente UNA de estas tres opciones.
+#   framework: todas las políticas activas de un framework. Valores: OWASP_TOP_10_2021, ISO_27001,
+#              OWASP_ASVS, NIST_SP_800_53, DEVSECOPS, CUSTOM
+#   policySet: un Policy Set de SegSoft, por nombre o id    (ej.: policySet: "Perfil PDG ICESI")
+#   policies:  ids de políticas concretas                   (ej.: policies: ["<id>", "<id>"])
+framework: OWASP_TOP_10_2021
+
+# Severidad mínima que hace fallar: medium | high | critical (exit code 1, o 2 si hay CRITICAL).
+failOnSeverity: high
+
+# Lo que no se sube, además de .git/, node_modules/, entornos virtuales y cachés.
+exclude: ["dist/", "build/", "target/"]
+"""
 
 
 __all__: List[str] = ["Config", "PolicySource", "load_config", "parse_config", "CONFIG_FILE_NAME",

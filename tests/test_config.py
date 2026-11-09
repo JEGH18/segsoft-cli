@@ -40,7 +40,7 @@ def test_full_config():
 
 
 def test_missing_file_explains_how_to_create_it(tmp_path: Path):
-    with pytest.raises(ConfigError, match="No se encontró .*Crea un .pdgseg.yml"):
+    with pytest.raises(ConfigError, match="No se encontró .*Créalo con «pdgseg init»"):
         load_config(tmp_path / ".pdgseg.yml", env={})
 
 

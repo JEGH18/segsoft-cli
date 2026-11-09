@@ -159,13 +159,14 @@ def analyze(path: Path, config_path: Optional[Path], output_format: str, output_
 @main.command("init")
 @click.option("--path", "path", type=click.Path(file_okay=False, path_type=Path), default=".", show_default=True)
 def init(path: Path) -> None:
-    """Crea un .pdgseg.yml de ejemplo (no sobrescribe uno existente)."""
+    """Crea un .pdgseg.yml listo para usar (no sobrescribe uno existente)."""
     target = path / CONFIG_FILE_NAME
     if target.exists():
         click.echo(f"{target} ya existe; no se modificó.", err=True)
         sys.exit(EXIT_ERROR)
     target.write_text(example_config(), encoding="utf-8")
-    click.echo(f"Creado {target}. Ajusta «server» y «policySet».")
+    click.echo(f"Creado {target}. Aplica las políticas de OWASP_TOP_10_2021; edítalo para usar otras "
+               f"(las opciones están comentadas). Ahora ejecuta «pdgseg analyze».")
 
 
 if __name__ == "__main__":  # pragma: no cover

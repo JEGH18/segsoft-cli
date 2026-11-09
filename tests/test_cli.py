@@ -9,6 +9,7 @@ import requests
 from click.testing import CliRunner
 
 from pdgseg.cli import main
+from pdgseg.config import load_config
 
 from conftest import ANALYSIS_ID, POLICY_SET_ID, REPO_ID, SARIF, SERVER, TOKEN, finding, write_config
 
@@ -233,11 +234,24 @@ def test_the_token_never_appears_in_the_output(project, backend):
     assert TOKEN not in result.stdout + stderr_of(result)
 
 
-def test_init_creates_an_example_config(tmp_path):
+def test_init_creates_a_config_that_works_without_editing(tmp_path):
     result = CliRunner().invoke(main, ["init", "--path", str(tmp_path)])
     assert result.exit_code == 0
-    assert "schemaVersion: 1" in (tmp_path / ".pdgseg.yml").read_text(encoding="utf-8")
+
+    config = load_config(tmp_path / ".pdgseg.yml", env={})
+    assert config.policy_source.framework == "OWASP_TOP_10_2021"
+    assert config.server == "https://segsoft-icesi.westus3.cloudapp.azure.com"
+    assert config.fail_on_severity == "high"
+    assert config.exclude == ("dist/", "build/", "target/")
+
+    # It never overwrites an existing file.
     assert CliRunner().invoke(main, ["init", "--path", str(tmp_path)]).exit_code == 10
+
+
+def test_without_config_the_error_points_to_init(tmp_path, backend):
+    result = run(tmp_path)
+    assert result.exit_code == 10
+    assert "Créalo con «pdgseg init»" in stderr_of(result)
 
 
 def responses_get():

@@ -76,8 +76,8 @@ pipelines que lo usen dejan de autenticarse de inmediato.
 
 ```bash
 cd mi-proyecto
-pdgseg init                         # crea un .pdgseg.yml de ejemplo
-# edita server y policySet
+pdgseg init                         # crea un .pdgseg.yml listo para usar (OWASP Top 10)
+# opcional: edítalo para usar otro framework, un Policy Set o políticas concretas
 export PDGSEG_API_TOKEN=pdgseg_...  # en Windows (PowerShell): $env:PDGSEG_API_TOKEN = "pdgseg_..."
 pdgseg analyze
 echo $?                             # 0, 1, 2 o 10
@@ -104,7 +104,8 @@ pdgseg analyze [--path DIR] [--config ARCHIVO] [--output text|json|sarif] [--out
 | `--token TOKEN` | `$PDGSEG_API_TOKEN` | Token de API. Mejor por la variable: lo que va en la línea de comandos puede quedar en el historial y en los logs. |
 | `--server URL` | `$PDGSEG_SERVER_URL` | URL del backend; reemplaza `server` del `.pdgseg.yml`. |
 
-Otros comandos: `pdgseg init [--path DIR]` crea un `.pdgseg.yml` de ejemplo (no sobrescribe uno
+Otros comandos: `pdgseg init [--path DIR]` crea un `.pdgseg.yml` listo para usar, con el framework
+`OWASP_TOP_10_2021` y las demás opciones comentadas (no sobrescribe uno
 existente); `pdgseg --version`; `pdgseg analyze --help`.
 
 ### Qué hace
