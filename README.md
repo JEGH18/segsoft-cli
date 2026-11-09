@@ -52,7 +52,7 @@ pip install pdgseg-cli
 pdgseg --version
 ```
 
-Mientras el paquete no esté publicado en PyPI, se instala desde GitHub:
+La versión en desarrollo se instala desde GitHub:
 
 ```bash
 pip install "git+https://github.com/JEGH18/segsoft-cli.git@main"

@@ -142,7 +142,8 @@ def _server_message(response: requests.Response) -> Optional[str]:
         return None
     if isinstance(body, dict):
         message = body.get("message") or body.get("error")
-        return str(message) if message else None
+        # Trailing period dropped: the CLI appends its own sentences after it.
+        return str(message).strip().rstrip(".") or None if message else None
     return None
 
 

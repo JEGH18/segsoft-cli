@@ -111,6 +111,16 @@ def test_http_errors_carry_the_server_message(client, status, expected):
 
 
 @responses.activate
+def test_the_server_message_does_not_end_up_with_a_double_period(client):
+    responses.get(f"{SERVER}/api/v1/x", status=401,
+                  json={"message": "El token de API no es válido, venció o fue revocado."})
+    with pytest.raises(ApiError) as e:
+        client.get_json("/api/v1/x")
+    assert "revocado. Revisa PDGSEG_API_TOKEN" in str(e.value)
+    assert ".." not in str(e.value).replace("pdgseg_...", "")
+
+
+@responses.activate
 def test_upload_resends_the_file_on_retry(client, tmp_path: Path, no_real_sleep):
     zip_path = tmp_path / "repo.zip"
     zip_path.write_bytes(b"PK-zip")
