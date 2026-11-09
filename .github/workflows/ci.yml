@@ -61,7 +61,88 @@ jobs:
           pdgseg --version
           pdgseg analyze --help
       - name: Unit tests against the installed package
+        # (the E2E tests are deselected by default: see the e2e job)
         run: |
           # src/ is never on sys.path (src layout), so "import pdgseg" loads the installed wheel.
           python -c "import pdgseg; print(pdgseg.__file__)"
           python -m pytest -q -p no:cacheprovider --rootdir=. tests
+
+  e2e:
+    name: E2E contra el backend real
+    needs: build
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: pdgseg
+          POSTGRES_USER: pdgseg
+          POSTGRES_PASSWORD: pdgseg
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U pdgseg" --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      INTERNAL_SERVICE_TOKEN: e2e-internal-token
+    steps:
+      - uses: actions/checkout@v4
+      - name: Backend (main)
+        uses: actions/checkout@v4
+        with:
+          repository: JEGH18/segsoft-backend
+          path: stack/backend
+      - name: Motor de análisis (main)
+        uses: actions/checkout@v4
+        with:
+          repository: JEGH18/segsoft-motorpython
+          path: stack/engine
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+          cache-dependency-path: stack/backend/pom.xml
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Start the engine
+        run: |
+          python -m venv /tmp/engine-venv
+          /tmp/engine-venv/bin/pip install -q ./stack/engine
+          cd stack/engine
+          nohup /tmp/engine-venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 18001 > /tmp/engine.log 2>&1 &
+
+      - name: Start the backend
+        env:
+          DB_URL: jdbc:postgresql://localhost:5432/pdgseg
+          DB_USER: pdgseg
+          DB_PASSWORD: pdgseg
+          ENGINE_BASE_URL: http://127.0.0.1:18001
+          JWT_SECRET: e2e-ci-secret-minimum-32-characters-long-ok
+        run: |
+          mvn -q -B -f stack/backend/pom.xml package -DskipTests
+          # Without the prod profile the backend seeds dev/dev123 (DEVELOPER) and admin/admin123.
+          nohup java -jar stack/backend/target/*.jar > /tmp/backend.log 2>&1 &
+          curl -sf --retry 60 --retry-connrefused --retry-delay 2 http://localhost:8080/actuator/health
+
+      - name: Install the built CLI
+        run: python -m pip install dist/*.whl "pytest>=8" "responses>=0.25"
+
+      - name: E2E tests
+        env:
+          PDGSEG_E2E_SERVER_URL: http://localhost:8080
+          PDGSEG_E2E_USERNAME: dev
+          PDGSEG_E2E_PASSWORD: dev123
+          PDGSEG_E2E_ADMIN_USERNAME: admin
+          PDGSEG_E2E_ADMIN_PASSWORD: admin123
+        run: python -m pytest -m e2e -v -p no:cacheprovider --rootdir=. tests/e2e
+
+      - name: Logs of the stack
+        if: failure()
+        run: |
+          tail -n 200 /tmp/backend.log || true
+          tail -n 100 /tmp/engine.log || true
