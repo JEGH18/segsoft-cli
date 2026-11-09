@@ -1,0 +1,67 @@
+name: CI
+
+# Construye el paquete y prueba el wheel instalado (no el código fuente) en Linux, macOS y
+# Windows, con todas las versiones de Python soportadas.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # setuptools-scm reads the version from the git tags
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip build twine
+      - run: python -m build
+      - run: python -m twine check --strict dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  test:
+    name: Test (${{ matrix.os }}, Python ${{ matrix.python }})
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Install the built wheel
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install dist/*.whl "pytest>=8" "responses>=0.25"
+      - name: The command is on the PATH
+        run: |
+          pdgseg --version
+          pdgseg analyze --help
+      - name: Unit tests against the installed package
+        run: |
+          # src/ is never on sys.path (src layout), so "import pdgseg" loads the installed wheel.
+          python -c "import pdgseg; print(pdgseg.__file__)"
+          python -m pytest -q -p no:cacheprovider --rootdir=. tests

@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://segsoft.website/schemas/pdgseg.schema.v1.json",
+  "title": ".pdgseg.yml (schemaVersion 1)",
+  "description": "Configuración del CLI pdgseg en la raíz del repositorio.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion"],
+  "properties": {
+    "schemaVersion": {
+      "description": "Versión del formato de este archivo.",
+      "const": 1
+    },
+    "server": {
+      "description": "URL base del backend de SegSoft. La variable PDGSEG_SERVER_URL o --server la reemplazan.",
+      "type": "string",
+      "pattern": "^https?://[^\\s/]+(/[^\\s]*)?$"
+    },
+    "policySet": {
+      "description": "Nombre o id del Policy Set a aplicar.",
+      "type": "string",
+      "minLength": 1
+    },
+    "policies": {
+      "description": "Ids de las políticas a aplicar.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      }
+    },
+    "framework": {
+      "description": "Aplica todas las políticas activas de un framework.",
+      "enum": ["OWASP_TOP_10_2021", "ISO_27001", "OWASP_ASVS", "NIST_SP_800_53", "DEVSECOPS", "CUSTOM"]
+    },
+    "failOnSeverity": {
+      "description": "Severidad mínima que hace fallar el pipeline (exit code 1, o 2 si hay CRITICAL).",
+      "enum": ["medium", "high", "critical"],
+      "default": "high"
+    },
+    "exclude": {
+      "description": "Patrones de archivos o carpetas que no se suben (estilo glob: 'dist/', '*.min.js', 'docs/**').",
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "timeoutMinutes": {
+      "description": "Tiempo máximo de espera del análisis.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 120,
+      "default": 15
+    },
+    "pollIntervalSeconds": {
+      "description": "Cada cuánto se consulta el estado del análisis.",
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 60,
+      "default": 5
+    }
+  }
+}

@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=69", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pdgseg-cli"
+dynamic = ["version"]
+description = "CLI de SegSoft: ejecuta el análisis de cumplimiento de seguridad desde pipelines CI/CD"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "PDG SegSoft - Universidad Icesi" }]
+keywords = ["security", "compliance", "sast", "ci", "sarif", "owasp"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Security",
+    "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = [
+    "click>=8.1,<9",
+    "requests>=2.31,<3",
+    "PyYAML>=6.0,<7",
+    "jsonschema>=4.18,<5",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8",
+    "responses>=0.25",
+]
+
+[project.scripts]
+pdgseg = "pdgseg.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/JEGH18/segsoft-cli"
+Source = "https://pi2tools.icesi.edu.co/bitbucket/projects/SEGSOFT/repos/segsoft-cli"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+pdgseg = ["schema/*.json"]
+
+[tool.setuptools_scm]
+# The version comes from the git tag (v1.2.3 -> 1.2.3); without tags, a dev version.
+fallback_version = "0.0.0.dev0"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "e2e: needs a running SegSoft backend (PDGSEG_E2E_SERVER_URL and PDGSEG_E2E_TOKEN)",
+]
+addopts = "-m 'not e2e'"
